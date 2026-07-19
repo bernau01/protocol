@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "utils/log.hpp"
+
 #ifdef __GNUC__
 #define EXPECT(x, v)    __builtin_expect(x, v)
 #define LIKELY(x)       EXPECT(!!(x), 1)

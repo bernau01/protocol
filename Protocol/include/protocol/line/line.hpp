@@ -2,15 +2,17 @@
 #define PROTOCOL_LINE_HPP
 
 #include "../device/dev_child.hpp"
-#include "line_func_set.hpp"
+#include "../utils/list.hpp"
 
 namespace protocol
 {
 
-class Line : public DevChild
+class Device;
+
+class Line
 {
 public:
-    explicit Line() : DevChild() {}
+    explicit Line() {}
     virtual ~Line() = default;
 
     virtual Status inputPacket(Packet &packet)
@@ -18,21 +20,16 @@ public:
         (void)packet; // To avoid unused parameter warning
         return Status::NotFound;
     }
-};
 
+protected:
+    [[nodiscard]] inline
+    Device* getDevice() const { return m_device; }
 
-class NullLine final : public Line
-{
 private:
-    NullLine() = default;
-public:
-    Status inputPacket(Packet &packet) override
-    {
-        (void)packet; // To avoid unused parameter warning
-        return Status::NotFound;
-    }
+    void setDevice(Device* device) { m_device = device; }
 
-    static NullLine instance;
+    Device* m_device = nullptr;
+    friend class Device;
 };
 
 }

@@ -19,21 +19,6 @@ public:
     }
 };
 
-
-class NullInterface : public Interface
-{
-private:
-    NullInterface() = default;
-public:
-    Status fromDevice(Packet &packet) override
-    {
-        (void)packet; // To avoid unused parameter warning
-        return Status::NotFound;
-    }
-
-    static NullInterface instance;
-};
-
 }
 
 #endif // PROTOCOL_INTERFACE_HPP

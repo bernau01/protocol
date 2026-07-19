@@ -217,6 +217,15 @@ public:
         return Status::OK;
     }
 
+    inline constexpr
+    Status checkIsSub(const DgBuff& sub_buff, size_t offset) const
+    {
+        if(sub_buff.buff_ == buff_ + offset) {
+            return Status::OK;
+        }
+        return Status::Invalid;
+    }
+
 private:
     uint8_t* buff_;
     size_t size_;

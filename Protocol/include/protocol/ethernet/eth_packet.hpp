@@ -7,27 +7,28 @@
 #include "../data/dgbuff.hpp"
 #include "../data/dgbuff_field.hpp"
 #include "../status.hpp"
+#include "../packet/com_packet.hpp"
 
 #include <cstring>
 
 namespace protocol::eth
 {
 
-struct Common 
-{
-    static constexpr size_t data_padding_byte = 4;
-    static constexpr size_t header_size = 16;
-    static constexpr size_t payload_offset = 16;
-    static constexpr size_t max_datagram_size = 1024;
+// struct Common 
+// {
+//     static constexpr size_t data_padding_byte = 4;
+//     static constexpr size_t header_size = 16;
+//     static constexpr size_t payload_offset = 16;
+//     static constexpr size_t max_datagram_size = 1024;
 
-    static inline constexpr
-    size_t getInBuffSize(size_t size)
-    {
-        constexpr uint8_t unit_min_one = Common::data_padding_byte - 1;
-        uint8_t tailed_len = (size + unit_min_one) & ~unit_min_one;
-        return tailed_len;
-    }
-};
+//     static inline constexpr
+//     size_t getInBuffSize(size_t size)
+//     {
+//         constexpr uint8_t unit_min_one = Common::data_padding_byte - 1;
+//         uint8_t tailed_len = (size + unit_min_one) & ~unit_min_one;
+//         return tailed_len;
+//     }
+// };
 
 struct Header
 {
@@ -43,34 +44,26 @@ struct Header
 class PacketField
 {
     static constexpr size_t preamble_offset = 0;
-    static constexpr size_t preamble_size = 3;
+    static constexpr size_t preamble_size = 4;
     static constexpr uint32_t preamble_value = 0x01'73'74'69; // "its\01" in little-endian
 
-    static constexpr size_t ver_offset = 3;
-    static constexpr size_t ver_size = sizeof(uint8_t);
+    static constexpr size_t non_offset = 4;
+    static constexpr size_t non_size = sizeof(uint8_t);
 
-    static constexpr size_t dev_sn_offset = 4;
-    static constexpr size_t dev_sn_size = sizeof(uint16_t);
+    static constexpr size_t dev_sn_offset = 5;
+    static constexpr size_t dev_sn_size = sizeof(uint8_t);
 
     static constexpr size_t dev_addr_offset = 6;
-    static constexpr size_t dev_addr_size = sizeof(uint16_t);
+    static constexpr size_t dev_addr_size = sizeof(uint8_t);
 
-    static constexpr size_t counter_offset = 8;
-    static constexpr size_t counter_size = sizeof(uint16_t);
-
-    static constexpr size_t node_len_offset = 10;
-    static constexpr size_t node_len_size = sizeof(uint8_t);
-
-    static constexpr size_t timestamp_offset = 12;
-    static constexpr size_t timestamp_size = sizeof(uint32_t);
+    static constexpr size_t counter_offset = 7;
+    static constexpr size_t counter_size = sizeof(uint8_t);
 
     using PreambleField     = BuffFieldM<uint32_t, preamble_offset>;
-    using VersionField      = BuffField<uint8_t , ver_offset>;
-    using DevSnField        = BuffField<uint16_t, dev_sn_offset>;
-    using DevAddrField      = BuffField<uint16_t, dev_addr_offset>;
-    using CounterField      = BuffField<uint16_t, counter_offset>;
-    using NodeLenField      = BuffFieldM<uint8_t , node_len_offset>;
-    using TimestampField    = BuffField<uint32_t, timestamp_offset>;
+    using DevSnField        = BuffField<uint8_t, dev_sn_offset>;
+    using DevAddrField      = BuffField<uint8_t, dev_addr_offset>;
+    using CounterField      = BuffField<uint8_t, counter_offset>;
+    using NONField          = BuffField<uint8_t , non_offset>;
 
 public:
     explicit PacketField(DgBuff &buff) : m_buff(buff) {}
@@ -79,7 +72,7 @@ public:
     bool isPreambleValid() const
     {
         // Check header size
-        if(m_buff.size() < Common::header_size) {
+        if(m_buff.size() < Common::comm_header_size) {
             return false;
         }
 
@@ -107,7 +100,7 @@ public:
 
     bool isBufferValid() const
     {
-        if(m_buff.size() < Common::header_size) {
+        if(m_buff.size() < Common::comm_header_size) {
             return false;
         }
         return true;
@@ -135,10 +128,7 @@ public:
         temp.counter = CounterField::unsafeGet(m_buff);
 
         // Get node length
-        temp.node_len = NodeLenField::unsafeGet(m_buff);
-
-        // Get timestamp
-        temp.timestamp = TimestampField::unsafeGet(m_buff);
+        temp.node_len = NONField::unsafeGet(m_buff);
 
         return {Status::OK, temp};
     }
@@ -162,21 +152,15 @@ public:
     }
 
     [[nodiscard]] inline constexpr
-    uint8_t getNodeLen() const
+    uint8_t getNumOfNodes() const
     {
-        return NodeLenField::unsafeGet(m_buff);
-    }
-
-    [[nodiscard]] inline constexpr
-    uint32_t getTimeStamp() const
-    {
-        return TimestampField::unsafeGet(m_buff);
+        return NONField::unsafeGet(m_buff);
     }
 
     [[nodiscard]]
     RetStatus<DgBuff> getPayloadBuff() const
     {
-        auto ret = m_buff.sub(Common::header_size);
+        auto ret = m_buff.sub(Common::comm_header_size);
         return ret;
     }
 
@@ -206,14 +190,9 @@ public:
         CounterField::unsafeSet(counter, m_buff);
     }
 
-    void setNodeLen(size_t node_len) 
+    void setNumOfNodes(size_t node_len) 
     {
-        NodeLenField::unsafeSet(node_len, m_buff);
-    }
-
-    void setTimeStamp(uint32_t timestamp) 
-    {
-        TimestampField::unsafeSet(timestamp, m_buff);
+        NONField::unsafeSet(node_len, m_buff);
     }
 
     [[nodiscard]]
@@ -229,8 +208,7 @@ public:
         DevSnField::unsafeSet(header.dev_sn, m_buff);
         DevAddrField::unsafeSet(header.dev_addr, m_buff);
         CounterField::unsafeSet(header.counter, m_buff);
-        NodeLenField::unsafeSet(header.node_len, m_buff);
-        TimestampField::unsafeSet(header.timestamp, m_buff);
+        NONField::unsafeSet(header.node_len, m_buff);
 
         return Status::OK;
     }

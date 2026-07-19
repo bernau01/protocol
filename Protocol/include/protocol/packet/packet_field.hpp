@@ -113,7 +113,7 @@ public:
         // Initial check for header size. Standard header is the minimum size for now
         // header size and data length will be checked again after parsing header
         if(m_buff.size() < PacketCommon::header_size_std) {
-            return RetStatus<Packet>{Status::RunOut, Packet{}};
+            return RetStatus<Packet>{Status::Malformed, Packet{}};
         }
 
         // Below code is safe to access the buffer data until header_size_std bytes, as we have already checked the size
@@ -130,7 +130,7 @@ public:
 
         const size_t required_size = packet.getPacketSize();
         if(m_buff.size() < required_size) {
-            return RetStatus<Packet>{Status::RunOut, Packet{}};
+            return RetStatus<Packet>{Status::Malformed, Packet{}};
         }
 
         // After this point, we can safely access the buffer data until required_size bytes

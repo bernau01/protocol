@@ -44,7 +44,7 @@ protected:
         packet.setDataBuff(DgBuff{data, len});
         packet.setInterfaceId(std::numeric_limits<uint8_t>::max());
 
-        this->toDevice(packet);
+        getDevice()->sendToHost(packet);
     }
 
 private:

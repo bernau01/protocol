@@ -25,7 +25,30 @@ enum class Status : uint8_t
     NotSupported = 10, ///< Operation or feature not supported
     Refused = 11,     ///< Operation refused (e.g., due to policy or permissions)
     NotInitialized = 12, ///< Component or subsystem not initialized
+    NothingToDo = 13, ///< No action required or nothing to do
 };
+
+inline constexpr
+const char* getStatusName(Status status)
+{
+    switch(status) {
+        case Status::OK: return "OK";
+        case Status::Error: return "Error";
+        case Status::Timeout: return "Timeout";
+        case Status::NotFound: return "NotFound";
+        case Status::Overflow: return "Overflow";
+        case Status::RunOut: return "RunOut";
+        case Status::Invalid: return "Invalid";
+        case Status::Malformed: return "Malformed";
+        case Status::Busy: return "Busy";
+        case Status::OutOfRange: return "OutOfRange";
+        case Status::NotSupported: return "NotSupported";
+        case Status::Refused: return "Refused";
+        case Status::NotInitialized: return "NotInitialized";
+        case Status::NothingToDo: return "NothingToDo";
+        default: return "Unknown";
+    }
+}
 
 template<typename T>
 class RetStatusRef;

@@ -21,7 +21,7 @@ struct NodeSetGetFuncSet
 };
 
 template <typename ...TNodes>
-class InternalLine : public Line
+class InternalLine final : public Line
 {
 private:
     static inline constexpr size_t node_size = sizeof...(TNodes);
@@ -56,7 +56,7 @@ public:
 
         } while(false); 
         
-        this->toDevice(packet);
+        getDevice()->sendToHost(packet);
 
         return status;
     }

@@ -5,6 +5,7 @@ CMakeFiles/
 CMakeScripts/
 build/
 install/
+log/
 
 # Build directories
 *.o
