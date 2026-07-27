@@ -1,6 +1,7 @@
 #ifndef PROTOCOL_DEVICE_HPP
 #define PROTOCOL_DEVICE_HPP
 
+#include "protocol/utils/time.hpp"
 #include "rx_parser.hpp"
 #include "tx_composer.hpp"
 #include "../data/dgbuff.hpp"
@@ -37,6 +38,8 @@ public:
 
     Status packetInput(const ComPacket& packet)
     {
+        wakeUp();
+
         LockGuard lock_guard(m_still_receive);
         if (UNLIKELY(!lock_guard.tryLock())) {
             P_LOG_WARNING("Failed to acquire lock for packet input");
@@ -141,11 +144,40 @@ public:
         return Status::OK;
     }
 
+    void update()
+    {
+        if(!isConnected()) {
+            return;
+        }
+
+        auto current_time = utils::getCurrentTimestamp();
+        if(current_time - m_timestamp >= conf::session::timeout_ms) {
+            if(m_host_check_counter < conf::session::reconnect_attempts) {
+                m_host_check_counter += 1;
+                P_LOG_INFO("Checking host connection, attempt {}/{}", 
+                    m_host_check_counter, conf::session::reconnect_attempts);
+                handleCheckHost();
+                m_timestamp = current_time - (conf::session::timeout_ms - conf::session::check_interval_ms);
+            }
+            else {
+                P_LOG_WARNING("Device timeout, disconnecting host");
+                disconnect();
+            }
+        }
+        
+    }
+
 private:
 
     bool isConnected() const
     {
         return m_host_port != nullptr;
+    }
+
+    void wakeUp()
+    {
+        m_timestamp = utils::getCurrentTimestamp();
+        m_host_check_counter = 0;
     }
 
     Status processCommand(const ComPacket& packet)
@@ -311,6 +343,21 @@ private:
         return packet.port->send(resp_packet, host_info);
     }
 
+    Status handleCheckHost()
+    {
+        if(!isConnected()) {
+            return Status::NotFound;
+        }
+
+        ComPacket resp_packet;
+        resp_packet.data_buff = DgBuff{};
+        resp_packet.type = ComPacketType::CheckHost;
+
+        auto status = transmitToHost(resp_packet);
+
+        return status;
+    }
+
     Status disconnect()
     {
         ComPacket resp_packet;
@@ -363,6 +410,8 @@ private:
 
     TxComposer m_tx_composer;
     uint8_t m_tx_counter = 0;
+    uint8_t m_host_check_counter = 0;
+    uint32_t m_timestamp = 0;
 
     Lock m_still_receive;
 };

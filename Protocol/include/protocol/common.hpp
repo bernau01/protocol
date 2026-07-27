@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "conf.hpp"
 #include "utils/log.hpp"
 
 #ifdef __GNUC__

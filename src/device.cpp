@@ -65,7 +65,7 @@ void init()
 
 void update()
 {
-    port_udp_1.join();
+    dev.update();
 }
 
 }

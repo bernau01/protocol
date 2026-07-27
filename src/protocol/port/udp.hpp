@@ -61,8 +61,8 @@ public:
 
         setTimeout(std::chrono::milliseconds(5000));
 
-        m_rx_thread = std::thread(&UdpPort::run, this);
-        m_tx_monitor_thread = std::thread(&UdpPort::update, this);
+        m_rx_thread = std::thread(&UdpPort::receiveThread, this);
+        m_tx_monitor_thread = std::thread(&UdpPort::updateThread, this);
 
         return true;
     }
@@ -109,7 +109,7 @@ public:
         return m_tx_buff.unsafeSub(protocol::Common::datagram_offset);
     }
 
-    void run()
+    void receiveThread()
     {
         LOG_INFO("Receive thread is started");
         uint8_t rx_buff[1500];
@@ -132,7 +132,7 @@ public:
         }
     }
 
-    void update()
+    void updateThread()
     {
         LOG_INFO("Transmit checker thread is started");
         while(!m_is_terminated) {

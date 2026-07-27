@@ -34,6 +34,7 @@ enum class ComPacketType : uint8_t
     RespConnect     = 0x83,
     ReqDisconnect   = 0x84,
     RespDisconnect  = 0x85,
+    CheckHost       = 0x86,
 
     Busy            = 0xF0,
     InvalidCmd      = 0xFE,
